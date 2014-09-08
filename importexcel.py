@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse_lazy
 
 from django.contrib.auth.models import User, Group
 
-#1. custom classes
+#1. common callback functions
 def nop():
     return [True, '']
 
@@ -26,7 +26,18 @@ def email_or_username(self, row):
     if username_idx != None :
         #take username
         is_email = False
-        val = row[username_idx]
+        val = None
+        try :
+            val = row[username_idx]
+        except :
+            pass
+        if val == None :
+            is_email = True
+            val = row[email_idx]
+        else :
+            if len(val) <= 1 :
+                is_email = True
+                val = row[email_idx]
     else :
         val = row[email_idx]
 
@@ -77,6 +88,11 @@ def check_against_username_email_uniqueness(self):
             j += 1
     return [True,'']
 
+#1.3 common validators
+def always_valid(self, row, val):
+    return True
+
+
 #2. Class defintion
 
 class ImportExcel :
@@ -87,6 +103,7 @@ class ImportExcel :
         self.excelfield_mandatory = {}
         self.record_constructlist = []
         self.path = '/tmp/import_excel.xls'
+        self.excelfield_validators = {}
         self.ws = None
 
     def set_path(self, path):
@@ -94,6 +111,9 @@ class ImportExcel :
 
     def set_precondition_function(self, precondition_function):
         self.precondition_function = precondition_function
+
+    def set_excelfield_validators(self, validators):
+        self.excelfield_validators = deepcopy(validators)
 
     def set_excelfield_mandatory(self, excelfieldmandatory):
         self.excelfield_mandatory = deepcopy(excelfieldmandatory)
@@ -158,6 +178,11 @@ class ImportExcel :
                     if len(cell_value) < 1 :
                         failure_reason += excel_field
                         input_ok = False
+                if self.excelfield_validators.has_key(excel_field) :
+                    print "validator:", self.excelfield_validators[excel_field]
+                    if self.excelfield_validators[excel_field](self, row, cell_value) == False :
+                        return [False, "Invalid field value"+ cell_value+" for field "+excel_field]
+
         if input_ok == False :
             return [False, failure_reason]
 
