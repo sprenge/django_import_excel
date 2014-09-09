@@ -1,0 +1,17 @@
+{% extends "base.html"%}
+{% block page-content_outer %}
+<div class="atane-v_push-page_header"></div>
+<div class="container">
+<h> </h>
+<h>Import teams from excel sheet : press browse file to select an excel sheet and submit</h>
+<form enctype="multipart/form-data" method="post" action=".">
+   {% csrf_token %}
+   {{ form.non_field_errors }}
+   <table>
+      {{form.file.errors}}
+      {{form.file}}
+    </table>
+    <input type="submit" value="Submit" id="Save"/>
+</form>
+</div>
+{% endblock page-content_outer %}
