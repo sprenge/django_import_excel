@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import sys
+import traceback
 import xlrd
 import datetime
 from copy import deepcopy
@@ -203,8 +205,8 @@ class ImportExcel :
                 for name_indexed in rec[2] :
                     idx = self.excelfield2position[name_indexed[0]]
                     val = name_indexed[1](self, row[idx], row)
-                    if val == None :
-                        return [False,"Invalid field value :"+name_indexed[0]+" row "+str(i)+" "+ appname + " " + tablename]
+                    if isinstance(val,list) :
+                        return [False,"Invalid field value :"+name_indexed[0]+" row "+str(i+1)+" "+ appname + " " + tablename]
                     kw[name_indexed[2]] = val
                 found = True
                 line = None
@@ -227,13 +229,13 @@ class ImportExcel :
                     for name_indexed in rec[2] :
                         idx = self.excelfield2position[name_indexed[0]]
                         val = name_indexed[1](self, row[idx], row)
-                        if val == None :
+                        if isinstance(val, list):
                             return [False,"Invalid field value (setattr idx) "+name_indexed[0]+" row "+str(i)+ " "+appname+ " " + tablename]
                         setattr (new_table_entry,name_indexed[2],val)
                     for name_not_indexed in rec[3] :
                         idx = self.excelfield2position[name_not_indexed[0]]
                         val = name_not_indexed[1](self, row[idx], row)
-                        if val == None :
+                        if isinstance(val,list) :
                             return [False,"Invalid field value (setattr non idx) "+name_not_indexed[0]+" row "+str(i)+ " " +appname+ " " + tablename]
                         setattr (new_table_entry,name_not_indexed[2],val)
                     save_ok = True
@@ -242,5 +244,7 @@ class ImportExcel :
                     except :
                         save_ok = None
                     if save_ok == None :
-                        return [False,"Save failed:"+appname+ " " + tablename+" row "+str(i)]
+                        type_, value_, traceback_ = sys.exc_info()
+                        ex = traceback.format_exception(type_, value_, traceback_)
+                        return [False,"Save failed:"+appname+ " " + tablename+" row "+str(i)+ " "+str(ex)+" "+str(sys.exc_value)]
         return [True,""]

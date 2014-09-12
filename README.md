@@ -22,3 +22,20 @@ self is the conversion object itself (see later), row is a list with values of t
 current excel cell.
 
 3. Mapping rules
+
+The mapping rules have to expressed in the form a list variable with 5 elements :
+
+- First element : path name to application e.g. auth
+- Second element : name of the table e.g. User
+- Third element : is again a list of two elements, first element is again a list of key mapping elements and ssecond element is a list of non key mapping elements (see further)
+- Fourth element : creation callback
+- Fifth element : set to False if a record maybe created (if record with the key(s) is not found or to True if a record may not be created. 
+
+mapping elements are always a list of 3 items, the first item is the excel filename, the second element is the callback function to translate excel field to database field and the third element is the field name in the database.
+
+key mapping elements are use to determine whether a record already exists in the database or not (AND function applies if multiple are given)
+
+The callback function takes 3 arguments : self, row (list of values) and val (the value from excel) and return the value as it has to be written into the database.
+
+The create callback takes 3 arguments : self, the model reference and the row (list of values) and has to return the created record instance.  The callback can return None in case of an error.
+
