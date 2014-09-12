@@ -41,6 +41,7 @@ def email_or_username(self, row):
     else :
         val = row[email_idx]
 
+    print "eu:", is_email, val
     return [is_email, val]
 
 def check_against_username_email_uniqueness(self):
@@ -61,12 +62,10 @@ def check_against_username_email_uniqueness(self):
             excel_field = self.position2field[j]
             if excel_field == 'email cmsuser' :
                 email = None
-                print j, cell_value
                 try :
                     email = User.objects.get(email = cell_value)
                 except :
                     pass
-                print email, un
                 if email_dict.has_key(cell_value) or email != None :
                     if len (un) < 1 :
                         return [False,'Duplicate email and no username specified '+cell_value]
@@ -163,8 +162,6 @@ class ImportExcel :
 
         self.ws = ws
         self.process_excel_header()
-        #print self.excelfield2position
-        #print self.position2field
 
         input_ok = True
         failure_reason = 'Following excel field is mandatory '
@@ -179,7 +176,6 @@ class ImportExcel :
                         failure_reason += excel_field
                         input_ok = False
                 if self.excelfield_validators.has_key(excel_field) :
-                    print "validator:", self.excelfield_validators[excel_field]
                     if self.excelfield_validators[excel_field](self, row, cell_value) == False :
                         return [False, "Invalid field value"+ cell_value+" for field "+excel_field]
 
@@ -193,19 +189,22 @@ class ImportExcel :
 
         for i in range(1, ws.nrows):
             row = []
+            #read first the row
             for j in range(0,ws.ncols) :
                 cell_value = ws.cell_value(i,j)
                 row.append(cell_value)
+            #Apply database mapping rules
             for rec in self.record_constructlist :
                 appname = rec[0]
                 tablename = rec[1]
                 m = get_model(appname, tablename)
-                print "record construct function:", rec[4]
                 kw = {}
                 new_table_entry = None
                 for name_indexed in rec[2] :
                     idx = self.excelfield2position[name_indexed[0]]
                     val = name_indexed[1](self, row[idx], row)
+                    if val == None :
+                        return [False,"Invalid field value :"+name_indexed[0]+" row "+str(i)+" "+ appname + " " + tablename]
                     kw[name_indexed[2]] = val
                 found = True
                 line = None
@@ -217,16 +216,31 @@ class ImportExcel :
                 if found == False or rec[5] == True:    #not found and a need to create a record
                     new_table_entry = line
                     if rec[5] == False :
-                        #print "create new record:", rec
-                        new_table_entry = rec[4](self, m, row) #create a new one
+                        new_table_entry = None
+                        try :
+                            new_table_entry = rec[4](self, m, row) #create a new one
+                        except :
+                            pass
+                        if new_table_entry == None :
+                            return [False,"record creation failed:"+appname+ " " + tablename+" row "+str(i)]
                     #write index first
                     for name_indexed in rec[2] :
                         idx = self.excelfield2position[name_indexed[0]]
                         val = name_indexed[1](self, row[idx], row)
-                        print "setattr:", type(new_table_entry),unicode(name_indexed[2]),unicode(val), type(val), rec
+                        if val == None :
+                            return [False,"Invalid field value (setattr idx) "+name_indexed[0]+" row "+str(i)+ " "+appname+ " " + tablename]
                         setattr (new_table_entry,name_indexed[2],val)
                     for name_not_indexed in rec[3] :
                         idx = self.excelfield2position[name_not_indexed[0]]
                         val = name_not_indexed[1](self, row[idx], row)
+                        if val == None :
+                            return [False,"Invalid field value (setattr non idx) "+name_not_indexed[0]+" row "+str(i)+ " " +appname+ " " + tablename]
                         setattr (new_table_entry,name_not_indexed[2],val)
-                    new_table_entry.save()
+                    save_ok = True
+                    try :
+                        new_table_entry.save()
+                    except :
+                        save_ok = None
+                    if save_ok == None :
+                        return [False,"Save failed:"+appname+ " " + tablename+" row "+str(i)]
+        return [True,""]
