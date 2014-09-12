@@ -1,17 +1,40 @@
 {% extends "base.html"%}
 {% block page-content_outer %}
-<div class="atane-v_push-page_header"></div>
 <div class="container">
-<h> </h>
-<h>Import teams from excel sheet : press browse file to select an excel sheet and submit</h>
-<form enctype="multipart/form-data" method="post" action=".">
-   {% csrf_token %}
-   {{ form.non_field_errors }}
-   <table>
-      {{form.file.errors}}
-      {{form.file}}
-    </table>
-    <input type="submit" value="Submit" id="Save"/>
-</form>
+   <div class="row atane-v_push-page_header">
+      {% if form_cms_login.errors %}
+      <p>Your username and password didn't match. Please try again.</p>
+      {% endif %}
+      <div class="col-md-4"></div>
+      <div class="col-md-8 atane_border_square">
+         {{add_media_response}}
+         <div class="atane-v_push20">
+               <p class="atane-login-welcome_back atane-h_push_left20">IMPORT TEAM(S) / TEAMMEMBERS FROM EXCEL</p>
+               <p class="atane-h_push_left20">(exact template match, unique email cmsuser)</p>
+             </div>
+         <div class="atane-hline atane-v_push20"></div>
+            <div class="atane-v_push20"></div>
+            <form enctype="multipart/form-data" method="post" action=".">
+               {% csrf_token %}
+               {{ form.non_field_errors }}
+               <table>
+                  {{form.file.errors}}
+                  {{form.file}}
+               </table>
+               <div class="atane-hline atane-v_push20"></div>
+		<div class="row">
+		    <div class="col-md-12 atane-v_push20">
+			<input class="btn btn-sm btn-success" type="submit" value="Import excel" />
+			<div class="atane-v_push20"></div>
+		    </div>
+		</div>
+            </form>
+      </div>
+   </div>   
 </div>
+<div class="atane-v_push-page_header-no_margin"></div>
 {% endblock page-content_outer %}
+
+{% block footer_inner %}
+    {% include "partials/footer.html"%}
+{% endblock footer_inner %}
